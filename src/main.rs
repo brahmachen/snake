@@ -204,19 +204,21 @@ fn move_snake(
                         },
                         new_point
                     )).id();
-
                     commands.entity(parent).insert_children(0, &vec![new_child]);
                 } else {
-                    for child in children {
-                        if let Ok(mut point) = point_query.get_mut(*child) {
-                            point.next_point(&snake.move_direction);
-                            let translation = point.translation();
-        
-                            if let Ok(mut transform) = transform_query.get_mut(*child) {
-                                transform.translation.x = translation.x;
-                                transform.translation.y = translation.y;
-                            }
+                    let tail_entity = children[children.len() - 1];
+                    if let Ok(mut point) = point_query.get_mut(tail_entity) {
+                        point.x = new_point.x;
+                        point.y = new_point.y;
+                        let translation = point.translation();
+    
+                        if let Ok(mut transform) = transform_query.get_mut(tail_entity) {
+                            transform.translation.x = translation.x;
+                            transform.translation.y = translation.y;
                         }
+                        commands.entity(parent).remove_children(&vec![tail_entity]);
+    
+                        commands.entity(parent).insert_children(0, &vec![tail_entity]);
                     }
                 }
 
