@@ -43,7 +43,7 @@ impl Point {
             Direction::Up => y += 1,
             Direction::Down => y -= 1,
             Direction::Left => x -= 1,
-            Direction::Right => y += 1,
+            Direction::Right => x += 1,
         }
         Self {
             x, y
@@ -88,6 +88,7 @@ fn main() {
         .add_startup_system(setup_snake)
         .add_system(generate_food)
         .add_system(move_snake)
+        .add_system(contral_snake)
         .run();
 }
 
@@ -102,7 +103,7 @@ fn setup_snake(mut commands: Commands) {
         x: 0, y: 0
     };
     let snake = Snake {
-        move_timer: Timer::from_seconds(1.0, TimerMode::Repeating),
+        move_timer: Timer::from_seconds(0.5, TimerMode::Repeating),
         move_direction: Direction::Up,
     };
     let translation = point.translation();
@@ -172,44 +173,77 @@ fn move_snake(
     mut parents_query: Query<(Entity, &Children, &mut Snake), With<Sprite>>,
     mut transform_query: Query<&mut Transform, With<Sprite>>,
     mut point_query: Query<&mut Point, With<Sprite>>,
+    mut food_query: Query<&Food>,
+
 ) {
     for (parent, children, mut snake) in &mut parents_query {
         if snake.move_timer.tick(time.delta()).just_finished() {
 
+            let mut is_eat_food = false;
             if let Ok(mut head) = point_query.get_mut(children[0]) {
                 let new_point = head.from_direction(&snake.move_direction);
+                food_query.for_each(|food| {
+                    if food.0.x == new_point.x && food.0.y == new_point.y {
+                        is_eat_food = true;
+                    }
+                });
 
-                let new_child = commands.spawn((
-                    SpriteBundle {
-                        transform: Transform {
-                            translation: new_point.translation(),
+                if is_eat_food {
+                    let new_child = commands.spawn((
+                        SpriteBundle {
+                            transform: Transform {
+                                translation: new_point.translation(),
+                                ..default()
+                            },
+                            sprite: Sprite {
+                                color: Color::rgb(0.4, 0.4, 0.8),
+                                custom_size: Some(Vec2::new(SquareSize, SquareSize)),
+                                ..default()
+                            },
                             ..default()
                         },
-                        sprite: Sprite {
-                            color: Color::rgb(0.4, 0.4, 0.8),
-                            custom_size: Some(Vec2::new(SquareSize, SquareSize)),
-                            ..default()
-                        },
-                        ..default()
-                    },
-                    new_point
-                )).id();
+                        new_point
+                    )).id();
 
-                commands.entity(parent).insert_children(0, &vec![new_child]);
-            }
-
-            for child in children {
-                if let Ok(mut point) = point_query.get_mut(*child) {
-                    // point.next_point(&snake.move_direction);
-                    let translation = point.translation();
-
-                    // if let Ok(mut transform) = transform_query.get_mut(*child) {
-                    //     transform.translation.x = translation.x;
-                    //     transform.translation.y = translation.y;
-                    // }
+                    commands.entity(parent).insert_children(0, &vec![new_child]);
+                } else {
+                    for child in children {
+                        if let Ok(mut point) = point_query.get_mut(*child) {
+                            point.next_point(&snake.move_direction);
+                            let translation = point.translation();
+        
+                            if let Ok(mut transform) = transform_query.get_mut(*child) {
+                                transform.translation.x = translation.x;
+                                transform.translation.y = translation.y;
+                            }
+                        }
+                    }
                 }
+
             }
         }
     }
 }
 
+fn contral_snake(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut snake_query: Query<&mut Snake, With<Sprite>>,
+) {
+    for mut snake in &mut snake_query {
+        let direction;
+        if keyboard_input.pressed(KeyCode::Up) {
+            direction = Direction::Up;
+        } else if keyboard_input.pressed(KeyCode::Down) {
+            direction = Direction::Down;
+        } else if keyboard_input.pressed(KeyCode::Left) {
+            direction = Direction::Left;
+        } else if keyboard_input.pressed(KeyCode::Right) {
+            direction = Direction::Right;
+        } else {
+            return;
+        }
+
+        snake.move_direction = direction;
+    }
+
+}
