@@ -1,12 +1,11 @@
 use bevy::prelude::*;
-use std::f32::consts::*;
 
 use rand::prelude::*;
 
 
-pub const HEIGHT: f32 = 720.0;
-pub const WIDTH: f32 = 1280.0;
-pub const SquareSize: f32 = 40.0;
+pub const HEIGHT: f32 = 600.0;
+pub const WIDTH: f32 = 1000.0;
+pub const SquareSize: f32 = 30.0;
 
 #[derive(Component, Clone, Copy)]
 struct Point {
@@ -14,11 +13,19 @@ struct Point {
     y: i32,
 }
 
+#[derive(PartialEq, Eq)]
 enum Direction {
     Up,
     Right,
     Down,
     Left,
+}
+
+#[derive(Component, Clone, Debug, Hash, PartialEq, Eq)]
+enum GameState {
+    Playing,
+    Pause,
+    Fail,
 }
 
 impl Point {
@@ -74,6 +81,7 @@ struct Snake {
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
+        .add_state(GameState::Playing)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
                 title: "snake".to_string(),
@@ -95,7 +103,7 @@ fn main() {
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 
-    commands.spawn(FoodTimer(Timer::from_seconds(2.0, TimerMode::Repeating)));
+    commands.spawn(FoodTimer(Timer::from_seconds(1.0, TimerMode::Once)));
 }
 
 fn setup_snake(mut commands: Commands) {
@@ -103,7 +111,7 @@ fn setup_snake(mut commands: Commands) {
         x: 0, y: 0
     };
     let snake = Snake {
-        move_timer: Timer::from_seconds(0.5, TimerMode::Repeating),
+        move_timer: Timer::from_seconds(0.2, TimerMode::Repeating),
         move_direction: Direction::Up,
     };
     let translation = point.translation();
@@ -173,7 +181,7 @@ fn move_snake(
     mut parents_query: Query<(Entity, &Children, &mut Snake), With<Sprite>>,
     mut transform_query: Query<&mut Transform, With<Sprite>>,
     mut point_query: Query<&mut Point, With<Sprite>>,
-    mut food_query: Query<&Food>,
+    food_query: Query<(Entity, &mut Food)>,
 
 ) {
     for (parent, children, mut snake) in &mut parents_query {
@@ -182,11 +190,12 @@ fn move_snake(
             let mut is_eat_food = false;
             if let Ok(mut head) = point_query.get_mut(children[0]) {
                 let new_point = head.from_direction(&snake.move_direction);
-                food_query.for_each(|food| {
+                for (food_entity, food) in &food_query {
                     if food.0.x == new_point.x && food.0.y == new_point.y {
                         is_eat_food = true;
+                        commands.entity(food_entity).despawn_recursive();
                     }
-                });
+                }
 
                 if is_eat_food {
                     let new_child = commands.spawn((
@@ -205,6 +214,8 @@ fn move_snake(
                         new_point
                     )).id();
                     commands.entity(parent).insert_children(0, &vec![new_child]);
+
+                    commands.spawn(FoodTimer(Timer::from_seconds(1.0, TimerMode::Once)));
                 } else {
                     let tail_entity = children[children.len() - 1];
                     if let Ok(mut point) = point_query.get_mut(tail_entity) {
@@ -228,24 +239,29 @@ fn move_snake(
 }
 
 fn contral_snake(
-    keyboard_input: Res<Input<KeyCode>>,
+    mut game_state: ResMut<State<GameState>>,
+    mut keyboard_input: ResMut<Input<KeyCode>>,
     mut snake_query: Query<&mut Snake, With<Sprite>>,
 ) {
     for mut snake in &mut snake_query {
-        let direction;
-        if keyboard_input.pressed(KeyCode::Up) {
-            direction = Direction::Up;
-        } else if keyboard_input.pressed(KeyCode::Down) {
-            direction = Direction::Down;
-        } else if keyboard_input.pressed(KeyCode::Left) {
-            direction = Direction::Left;
-        } else if keyboard_input.pressed(KeyCode::Right) {
-            direction = Direction::Right;
-        } else {
-            return;
+        if keyboard_input.pressed(KeyCode::Up) && snake.move_direction != Direction::Down {
+            snake.move_direction = Direction::Up;
+        } else if keyboard_input.pressed(KeyCode::Down) && snake.move_direction != Direction::Up {
+            snake.move_direction = Direction::Down;
+        } else if keyboard_input.pressed(KeyCode::Left) && snake.move_direction != Direction::Right {
+            snake.move_direction = Direction::Left;
+        } else if keyboard_input.pressed(KeyCode::Right) && snake.move_direction != Direction::Left {
+            snake.move_direction = Direction::Right;
+        } else if keyboard_input.pressed(KeyCode::Space) {
+            if game_state.current().clone() == GameState::Pause {
+                snake.move_timer.unpause();
+                game_state.set(GameState::Playing).unwrap();
+            } else {
+                snake.move_timer.pause();
+                game_state.set(GameState::Pause).unwrap();
+            }
+            keyboard_input.reset(KeyCode::Space);
         }
-
-        snake.move_direction = direction;
     }
 
 }
