@@ -1,7 +1,13 @@
 use bevy::prelude::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use rand::prelude::*;
 
+use common::*;
+use menu::*;
+
+mod common;
+mod menu;
 
 pub const HEIGHT: f32 = 600.0;
 pub const WIDTH: f32 = 1000.0;
@@ -21,12 +27,6 @@ enum Direction {
     Left,
 }
 
-#[derive(Component, Clone, Debug, Hash, PartialEq, Eq)]
-enum GameState {
-    Playing,
-    Pause,
-    Fail,
-}
 
 impl Point {
     fn random() -> Self {
@@ -82,6 +82,7 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
         .add_state(GameState::Playing)
+        .add_state(AppState::MainMenu)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
                 title: "snake".to_string(),
@@ -92,11 +93,17 @@ fn main() {
             },
             ..default()
         }))
+        .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup)
         .add_startup_system(setup_snake)
         .add_system(generate_food)
         .add_system(move_snake)
         .add_system(contral_snake)
+        .add_system_set(
+            SystemSet::on_enter(AppState::MainMenu)
+                .with_system(setup_main_menu)
+        )
+        .add_system_set(SystemSet::on_update(AppState::MainMenu).with_system(click_button))
         .run();
 }
 
