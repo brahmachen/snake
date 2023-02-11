@@ -81,7 +81,7 @@ struct Snake {
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
-        .add_state(GameState::Playing)
+        .add_state(GameState::Quitted)
         .add_state(AppState::MainMenu)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
@@ -96,24 +96,31 @@ fn main() {
         .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup)
         .add_startup_system(setup_snake)
-        .add_system(generate_food)
-        .add_system(move_snake)
-        .add_system(contral_snake)
         .add_system_set(
             SystemSet::on_enter(AppState::MainMenu)
                 .with_system(setup_main_menu)
         )
+        .add_system_set(
+            SystemSet::on_exit(AppState::MainMenu).with_system(despawn_screen::<OnMainMenuScreen>),
+        )
         .add_system_set(SystemSet::on_update(AppState::MainMenu).with_system(click_button))
+        // Game Playing
+        .add_system_set(
+            SystemSet::on_update(GameState::Playing)
+                .with_system(generate_food)
+                .with_system(move_snake)
+                .with_system(contral_snake)
+        )
         .run();
 }
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
-
-    commands.spawn(FoodTimer(Timer::from_seconds(1.0, TimerMode::Once)));
 }
 
 fn setup_snake(mut commands: Commands) {
+    commands.spawn(FoodTimer(Timer::from_seconds(1.0, TimerMode::Once)));
+
     let mut point = Point {
         x: 0, y: 0
     };

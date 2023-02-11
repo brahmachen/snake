@@ -14,20 +14,26 @@ pub enum MenuButtonAction {
     Quit,
 }
 
+#[derive(Component)]
+pub struct OnMainMenuScreen;
+
 pub fn setup_main_menu(
   mut commands: Commands,
   asset_server: Res<AssetServer>,
 ) {
   commands
-    .spawn(NodeBundle {
-        style: Style {
-            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-            justify_content: JustifyContent::Center,
-            flex_direction: FlexDirection::Column,
+    .spawn((
+        NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                justify_content: JustifyContent::Center,
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
             ..default()
-          },
-        ..default()
-    })
+        },
+        OnMainMenuScreen,
+    ))
     .with_children(|parent| {
       parent
           .spawn(NodeBundle {
@@ -160,4 +166,11 @@ pub fn click_button(
           _ => {}
       }
   }
+}
+
+
+pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
+    for entity in &to_despawn {
+        commands.entity(entity).despawn_recursive();
+    }
 }
