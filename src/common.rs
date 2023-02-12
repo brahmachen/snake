@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 pub const HEIGHT: f32 = 600.0;
-pub const WIDTH: f32 = 1200.0;
+pub const WIDTH: f32 = 1002.0;
 
 #[derive(Component, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum AppState {
@@ -16,5 +16,4 @@ pub enum GameState {
     Restarted,
     Quitted,
     Pause,
-    Fail,
 }

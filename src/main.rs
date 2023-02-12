@@ -18,8 +18,8 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
                 title: "snake".to_string(),
-                width: WIDTH,
-                height: HEIGHT,
+                width: WIDTH + SQUARE_SIZE,
+                height: HEIGHT + SQUARE_SIZE,
                 resizable: false,
                 ..default()
             },
@@ -27,7 +27,6 @@ fn main() {
         }))
         .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup)
-        .add_startup_system(setup_snake)
         .add_system_set(
             SystemSet::on_enter(AppState::MainMenu)
                 .with_system(setup_main_menu)
@@ -36,9 +35,11 @@ fn main() {
                 .with_system(setup_snake)
         )
         .add_system_set(
-            SystemSet::on_exit(AppState::MainMenu).with_system(despawn_screen::<OnMainMenuScreen>),
+            SystemSet::on_exit(AppState::MainMenu)
+                .with_system(despawn_screen::<OnMainMenuScreen>)
         )
         .add_system_set(SystemSet::on_update(AppState::MainMenu).with_system(click_button))
+        .add_system_set(SystemSet::on_update(AppState::InGame).with_system(pause_game))
 
         // Game Over Menu
         .add_system_set(SystemSet::on_enter(AppState::GameOver).with_system(setup_game_over_menu))

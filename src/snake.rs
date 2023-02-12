@@ -234,7 +234,17 @@ pub fn contral_snake(
           snake.move_direction = Direction::Left;
       } else if keyboard_input.pressed(KeyCode::Right) && snake.move_direction != Direction::Left {
           snake.move_direction = Direction::Right;
-      } else if keyboard_input.pressed(KeyCode::Space) {
+      }
+  }
+}
+
+pub fn pause_game(
+  mut game_state: ResMut<State<GameState>>,
+  mut keyboard_input: ResMut<Input<KeyCode>>,
+  mut snake_query: Query<&mut Snake, With<Sprite>>,
+) {
+  for mut snake in &mut snake_query {
+      if keyboard_input.pressed(KeyCode::Space) {
           if game_state.current().clone() == GameState::Pause {
               snake.move_timer.unpause();
               game_state.set(GameState::Playing).unwrap();
