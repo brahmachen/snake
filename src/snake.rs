@@ -246,3 +246,15 @@ pub fn contral_snake(
       }
   }
 }
+
+pub fn clear_snake(mut commands: Commands, query: Query<Entity, With<Point>>) {
+  for entity in &query {
+      commands.entity(entity).despawn();
+  }
+}
+
+pub fn clear_food(mut commands: Commands, query: Query<Entity, With<Food>>) {
+  for entity in &query {
+      commands.entity(entity).despawn();
+  }
+}

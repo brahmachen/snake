@@ -281,3 +281,8 @@ pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
         commands.entity(entity).despawn_recursive();
     }
 }
+
+
+pub fn play_game(mut game_state: ResMut<State<GameState>>) {
+    game_state.set(GameState::Playing).unwrap();
+}

@@ -43,10 +43,6 @@ fn main() {
         .add_system_set(
             SystemSet::on_exit(AppState::GameOver)
                 .with_system(despawn_screen::<OnGameOverMenuScreen>)
-                // .with_system(clear_board)
-                // .with_system(clear_score)
-                // .with_system(clear_lines)
-                // .with_system(clear_next_piece)
         )
 
         // Game Playing
@@ -56,6 +52,15 @@ fn main() {
                 .with_system(move_snake)
                 .with_system(contral_snake)
         )
+        // Game Restarted
+        .add_system_set(
+            SystemSet::on_enter(GameState::Restarted)
+                .with_system(clear_snake)
+                .with_system(clear_food)
+                .with_system(setup_snake)
+        )
+        .add_system_set(SystemSet::on_update(GameState::Restarted).with_system(play_game))
+        
         .run();
 }
 
