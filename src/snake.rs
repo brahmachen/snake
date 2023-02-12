@@ -51,11 +51,6 @@ impl Point {
             x, y
         }
     }
-    fn next_point(&mut self, direction: &Direction) {
-        let point = self.from_direction(direction);
-        self.x = point.x;
-        self.y = point.y;
-    }
 }
 
 #[derive(Component)]
@@ -158,7 +153,6 @@ pub fn move_snake(
 ) {
 for (parent, children, mut snake) in &mut parents_query {
 	if snake.move_timer.tick(time.delta()).just_finished() {
-		let mut is_eat_food = false;
 		let mut is_hit_wall = false;
 		let mut is_hit_self = false;
 		if let Ok(mut head) = point_query.get_mut(children[0]) {
@@ -181,6 +175,7 @@ for (parent, children, mut snake) in &mut parents_query {
 				return;
 			}
 
+			let mut is_eat_food = false;
 			for (food_entity, food) in &food_query {
 				if food.0.x == new_point.x && food.0.y == new_point.y {
 					is_eat_food = true;
@@ -271,8 +266,15 @@ pub fn clear_snake(mut commands: Commands, query: Query<Entity, With<Point>>) {
 	}
 }
 
-pub fn clear_food(mut commands: Commands, query: Query<Entity, With<Food>>) {
+pub fn clear_food(
+    mut commands: Commands, 
+    query: Query<Entity, With<Food>>, 
+    mut timer_query: Query<&mut FoodTimer>
+) {
 	for entity in &query {
 		commands.entity(entity).despawn();
+	}
+	for mut timer in &mut timer_query {
+        timer.0.pause(); // TODO 移除timer
 	}
 }
