@@ -75,45 +75,47 @@ pub struct Snake {
 
 
 pub fn setup_snake(mut commands: Commands) {
-  commands.spawn(FoodTimer(Timer::from_seconds(1.0, TimerMode::Once)));
+	commands.spawn(FoodTimer(Timer::from_seconds(1.0, TimerMode::Once)));
 
-  let mut point = Point {
-      x: 0, y: 0
-  };
-  let snake = Snake {
-      move_timer: Timer::from_seconds(0.15, TimerMode::Repeating),
-      move_direction: Direction::Up,
-  };
-  let translation = point.translation();
+	let parent = commands.spawn((
+		SpriteBundle {
+			transform: Transform {
+				translation: Vec3 { x: 0.0, y: 0.0, z: 0.0 },
+				..default()
+			},
+			..default()
+		},
+		Snake {
+			move_timer: Timer::from_seconds(0.15, TimerMode::Repeating),
+			move_direction: Direction::Right,
+		}
+	)).id();
 
-  let parent = commands.spawn((
-      SpriteBundle {
-          transform: Transform {
-              translation: Vec3 { x: 0.0, y: 0.0, z: 0.0 },
-              ..default()
-          },
-          ..default()
-      },
-      snake
-  )).id();
+	let init_points:Vec<Point> = vec![
+		Point { x: -5, y: 0 },
+		Point { x: -6, y: 0 },
+		Point { x: -7, y: 0 },
+	];
 
-  let children = commands.spawn((
-      SpriteBundle {
-          transform: Transform {
-              translation: translation,
-              ..default()
-          },
-          sprite: Sprite {
-              color: Color::rgb(0.4, 0.4, 0.8),
-              custom_size: Some(Vec2::new(SQUARE_SIZE, SQUARE_SIZE)),
-              ..default()
-          },
-          ..default()
-      },
-      point
-  )).id();
+	for point in init_points {
+		let children = commands.spawn((
+			SpriteBundle {
+				transform: Transform {
+					translation: point.translation(),
+					..default()
+				},
+				sprite: Sprite {
+					color: Color::rgb(0.4, 0.4, 0.8),
+					custom_size: Some(Vec2::new(SQUARE_SIZE, SQUARE_SIZE)),
+					..default()
+				},
+				..default()
+			},
+			point
+		)).id();
+		commands.entity(parent).add_child(children);
+	}
 
-  commands.entity(parent).add_child(children);
 }
 
 pub fn generate_food(
