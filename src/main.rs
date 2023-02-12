@@ -10,8 +10,10 @@ mod common;
 mod menu;
 
 pub const HEIGHT: f32 = 600.0;
-pub const WIDTH: f32 = 1000.0;
-pub const SquareSize: f32 = 30.0;
+pub const WIDTH: f32 = 1200.0;
+pub const SQUARE_SIZE: f32 = 30.0;
+pub const X: i32 = (WIDTH / 2.0 / SQUARE_SIZE) as i32;
+pub const Y: i32 = (HEIGHT / 2.0 / SQUARE_SIZE) as i32;
 
 #[derive(Component, Clone, Copy)]
 struct Point {
@@ -30,8 +32,8 @@ enum Direction {
 
 impl Point {
     fn random() -> Self {
-        let square_width: i32 = (WIDTH / SquareSize / 2.0) as i32;
-        let square_height: i32 = (HEIGHT / SquareSize / 2.0) as i32;
+        let square_width: i32 = (WIDTH / SQUARE_SIZE / 2.0) as i32;
+        let square_height: i32 = (HEIGHT / SQUARE_SIZE / 2.0) as i32;
 
         let mut rng = thread_rng();
         let x = rng.gen_range(-square_width..square_width);
@@ -41,7 +43,7 @@ impl Point {
         }
     }
     fn translation(&self) -> Vec3 {
-        Vec3 { x: (self.x as f32) * SquareSize, y: (self.y as f32) * SquareSize, z: 0.0 }
+        Vec3 { x: (self.x as f32) * SQUARE_SIZE, y: (self.y as f32) * SQUARE_SIZE, z: 0.0 }
     }
     fn from_direction(&mut self, direction: &Direction) -> Self {
         let mut x = self.x;
@@ -104,6 +106,19 @@ fn main() {
             SystemSet::on_exit(AppState::MainMenu).with_system(despawn_screen::<OnMainMenuScreen>),
         )
         .add_system_set(SystemSet::on_update(AppState::MainMenu).with_system(click_button))
+
+        // Game Over Menu
+        .add_system_set(SystemSet::on_enter(AppState::GameOver).with_system(setup_game_over_menu))
+        .add_system_set(SystemSet::on_update(AppState::GameOver).with_system(click_button))
+        .add_system_set(
+            SystemSet::on_exit(AppState::GameOver)
+                .with_system(despawn_screen::<OnGameOverMenuScreen>)
+                // .with_system(clear_board)
+                // .with_system(clear_score)
+                // .with_system(clear_lines)
+                // .with_system(clear_next_piece)
+        )
+
         // Game Playing
         .add_system_set(
             SystemSet::on_update(GameState::Playing)
@@ -149,7 +164,7 @@ fn setup_snake(mut commands: Commands) {
             },
             sprite: Sprite {
                 color: Color::rgb(0.4, 0.4, 0.8),
-                custom_size: Some(Vec2::new(SquareSize, SquareSize)),
+                custom_size: Some(Vec2::new(SQUARE_SIZE, SQUARE_SIZE)),
                 ..default()
             },
             ..default()
@@ -177,7 +192,7 @@ fn generate_food(
                     },
                     sprite: Sprite {
                         color: Color::rgb(0.8, 0.8, 0.8),
-                        custom_size: Some(Vec2::new(SquareSize, SquareSize)),
+                        custom_size: Some(Vec2::new(SQUARE_SIZE, SQUARE_SIZE)),
                         ..default()
                     },
                     ..default()
@@ -196,14 +211,26 @@ fn move_snake(
     mut transform_query: Query<&mut Transform, With<Sprite>>,
     mut point_query: Query<&mut Point, With<Sprite>>,
     food_query: Query<(Entity, &mut Food)>,
-
+    mut app_state: ResMut<State<AppState>>,
+    mut game_state: ResMut<State<GameState>>,
 ) {
     for (parent, children, mut snake) in &mut parents_query {
         if snake.move_timer.tick(time.delta()).just_finished() {
-
             let mut is_eat_food = false;
+            let mut is_game_over = false;
             if let Ok(mut head) = point_query.get_mut(children[0]) {
+                // 蛇头的下一个位置
                 let new_point = head.from_direction(&snake.move_direction);
+                // 检查是否游戏失败 --- 撞墙或者撞到自己
+                if new_point.x < -X || new_point.x > X || new_point.y < -Y || new_point.y > Y {
+                    is_game_over = true;
+                }
+                if is_game_over && app_state.current().clone() != AppState::GameOver {
+                    app_state.set(AppState::GameOver).unwrap();
+                    game_state.set(GameState::Quitted).unwrap();
+                    return;
+                }
+
                 for (food_entity, food) in &food_query {
                     if food.0.x == new_point.x && food.0.y == new_point.y {
                         is_eat_food = true;
@@ -220,7 +247,7 @@ fn move_snake(
                             },
                             sprite: Sprite {
                                 color: Color::rgb(0.4, 0.4, 0.8),
-                                custom_size: Some(Vec2::new(SquareSize, SquareSize)),
+                                custom_size: Some(Vec2::new(SQUARE_SIZE, SQUARE_SIZE)),
                                 ..default()
                             },
                             ..default()
