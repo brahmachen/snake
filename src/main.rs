@@ -31,6 +31,9 @@ fn main() {
         .add_system_set(
             SystemSet::on_enter(AppState::MainMenu)
                 .with_system(setup_main_menu)
+                .with_system(clear_snake)
+                .with_system(clear_food)
+                .with_system(setup_snake)
         )
         .add_system_set(
             SystemSet::on_exit(AppState::MainMenu).with_system(despawn_screen::<OnMainMenuScreen>),
