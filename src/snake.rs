@@ -81,7 +81,7 @@ pub fn setup_snake(mut commands: Commands) {
       x: 0, y: 0
   };
   let snake = Snake {
-      move_timer: Timer::from_seconds(0.2, TimerMode::Repeating),
+      move_timer: Timer::from_seconds(0.15, TimerMode::Repeating),
       move_direction: Direction::Up,
   };
   let translation = point.translation();

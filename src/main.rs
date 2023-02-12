@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use common::*;
 use menu::*;
@@ -25,7 +25,7 @@ fn main() {
             },
             ..default()
         }))
-        .add_plugin(WorldInspectorPlugin)
+        // .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup)
         .add_system_set(
             SystemSet::on_enter(AppState::MainMenu)
