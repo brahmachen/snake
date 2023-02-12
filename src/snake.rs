@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*};
 use rand::prelude::*;
 
 use crate::{
@@ -126,7 +126,6 @@ pub fn generate_food(
 	for mut timer in &mut query {
 		if timer.0.tick(time.delta()).just_finished() {
 			let square = Food(Point::random());
-			println!("x:{}, y:{}, translation:{}", square.0.x, square.0.y, square.0.translation());
 			commonds.spawn((
 				SpriteBundle {
 					transform: Transform {
@@ -160,15 +159,23 @@ pub fn move_snake(
 for (parent, children, mut snake) in &mut parents_query {
 	if snake.move_timer.tick(time.delta()).just_finished() {
 		let mut is_eat_food = false;
-		let mut is_game_over = false;
+		let mut is_hit_wall = false;
+		let mut is_hit_self = false;
 		if let Ok(mut head) = point_query.get_mut(children[0]) {
 			// 蛇头的下一个位置
 			let new_point = head.from_direction(&snake.move_direction);
 			// 检查是否游戏失败 --- 撞墙或者撞到自己
 			if new_point.x < -X || new_point.x > X || new_point.y < -Y || new_point.y > Y {
-				is_game_over = true;
+				is_hit_wall = true;
 			}
-			if is_game_over && app_state.current().clone() != AppState::GameOver {
+			for entity in children {
+				if let Ok(child) = point_query.get_mut(*entity) {
+					if new_point.x == child.x && new_point.y == child.y {
+						is_hit_self = true;
+					}
+				}
+			}
+			if (is_hit_wall || is_hit_self) && app_state.current().clone() != AppState::GameOver {
 				app_state.set(AppState::GameOver).unwrap();
 				game_state.set(GameState::Quitted).unwrap();
 				return;
