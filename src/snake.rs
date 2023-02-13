@@ -1,4 +1,4 @@
-use bevy::{prelude::*};
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use rand::prelude::*;
 
 use crate::{
@@ -100,7 +100,7 @@ pub fn setup_snake(mut commands: Commands) {
 					..default()
 				},
 				sprite: Sprite {
-					color: Color::rgb(0.4, 0.4, 0.8),
+					color: Color::rgb(0.5, 1.0, 0.5),
 					custom_size: Some(Vec2::new(SQUARE_SIZE, SQUARE_SIZE)),
 					..default()
 				},
@@ -116,26 +116,22 @@ pub fn setup_snake(mut commands: Commands) {
 pub fn generate_food(
   mut commonds: Commands,
   mut query: Query<&mut FoodTimer>,
+  mut meshes: ResMut<Assets<Mesh>>,
+  mut materials: ResMut<Assets<ColorMaterial>>,
   time: Res<Time>
 ) {
 	for mut timer in &mut query {
 		if timer.0.tick(time.delta()).just_finished() {
 			let square = Food(Point::random());
-			commonds.spawn((
-				SpriteBundle {
-					transform: Transform {
-						translation: square.0.translation(),
-						..default()
-					},
-					sprite: Sprite {
-						color: Color::rgb(0.8, 0.8, 0.8),
-						custom_size: Some(Vec2::new(SQUARE_SIZE, SQUARE_SIZE)),
-						..default()
-					},
-					..default()
-				},
-				square,
-			));
+            commonds.spawn((
+                MaterialMesh2dBundle {
+                    mesh: meshes.add(shape::Circle::new(SQUARE_SIZE / 4.0).into()).into(),
+                    material: materials.add(ColorMaterial::from(Color::RED)),
+                    transform: Transform::from_translation(square.0.translation()),
+                    ..default()
+                },
+                square,
+            ));
 		}
 	}
 }
@@ -191,7 +187,7 @@ for (parent, children, mut snake) in &mut parents_query {
 							..default()
 						},
 						sprite: Sprite {
-							color: Color::rgb(0.4, 0.4, 0.8),
+							color: Color::rgb(0.5, 1.0, 0.5),
 							custom_size: Some(Vec2::new(SQUARE_SIZE, SQUARE_SIZE)),
 							..default()
 						},

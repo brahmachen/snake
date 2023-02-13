@@ -12,7 +12,7 @@ mod snake;
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
+        .insert_resource(ClearColor(Color::rgb(49.0/255.0, 44.0/255.0, 63.0/255.0)))
         .add_state(GameState::Quitted)
         .add_state(AppState::MainMenu)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
