@@ -3,6 +3,7 @@ use rand::prelude::*;
 
 use crate::{
   common::{AppState, GameState, HEIGHT, WIDTH},
+  score::{Score, Record},
 };
 
 pub const SQUARE_SIZE: f32 = 30.0;
@@ -125,7 +126,7 @@ pub fn generate_food(
 			let square = Food(Point::random());
             commonds.spawn((
                 MaterialMesh2dBundle {
-                    mesh: meshes.add(shape::Circle::new(SQUARE_SIZE / 4.0).into()).into(),
+                    mesh: meshes.add(shape::Circle::new(SQUARE_SIZE / 3.0).into()).into(),
                     material: materials.add(ColorMaterial::from(Color::RED)),
                     transform: Transform::from_translation(square.0.translation()),
                     ..default()
@@ -146,6 +147,8 @@ pub fn move_snake(
 	food_query: Query<(Entity, &mut Food)>,
 	mut app_state: ResMut<State<AppState>>,
 	mut game_state: ResMut<State<GameState>>,
+    mut score: ResMut<Score>,
+    mut record: ResMut<Record>,
 ) {
 for (parent, children, mut snake) in &mut parents_query {
 	if snake.move_timer.tick(time.delta()).just_finished() {
@@ -166,8 +169,14 @@ for (parent, children, mut snake) in &mut parents_query {
 				}
 			}
 			if (is_hit_wall || is_hit_self) && app_state.current().clone() != AppState::GameOver {
+                // 更新得分最高记录
+                if score.0 > record.0 {
+                    record.0 = score.0;
+                }
+
 				app_state.set(AppState::GameOver).unwrap();
 				game_state.set(GameState::Quitted).unwrap();
+
 				return;
 			}
 
@@ -196,8 +205,9 @@ for (parent, children, mut snake) in &mut parents_query {
 					new_point
 				)).id();
 				commands.entity(parent).insert_children(0, &vec![new_child]);
-
 				commands.spawn(FoodTimer(Timer::from_seconds(1.0, TimerMode::Once)));
+
+                score.0 += 1;
 			} else {
 				let tail_entity = children[children.len() - 1];
 				if let Ok(mut point) = point_query.get_mut(tail_entity) {

@@ -4,15 +4,19 @@ use bevy::prelude::*;
 use common::*;
 use menu::*;
 use snake::*;
+use score::*;
 
 mod common;
 mod menu;
 mod snake;
+mod score;
 
 
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(49.0/255.0, 44.0/255.0, 63.0/255.0)))
+        .insert_resource(Score(0))
+        .insert_resource(Record(0))
         .add_state(GameState::Quitted)
         .add_state(AppState::MainMenu)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -27,11 +31,13 @@ fn main() {
         }))
         // .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup)
+        .add_startup_system(setup_score)
         .add_system_set(
             SystemSet::on_enter(AppState::MainMenu)
                 .with_system(setup_main_menu)
                 .with_system(clear_snake)
                 .with_system(clear_food)
+                .with_system(clear_score)
                 .with_system(setup_snake)
         )
         .add_system_set(
@@ -55,12 +61,15 @@ fn main() {
                 .with_system(generate_food)
                 .with_system(move_snake)
                 .with_system(contral_snake)
+                .with_system(update_scoreboard)
+                .with_system(update_recordboard)
         )
         // Game Restarted
         .add_system_set(
             SystemSet::on_enter(GameState::Restarted)
                 .with_system(clear_snake)
                 .with_system(clear_food)
+                .with_system(clear_score)
                 .with_system(setup_snake)
         )
         .add_system_set(SystemSet::on_update(GameState::Restarted).with_system(play_game))
