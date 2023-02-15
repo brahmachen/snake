@@ -32,6 +32,7 @@ fn main() {
         // .add_plugin(WorldInspectorPlugin)
         .add_startup_system(setup)
         .add_startup_system(setup_score)
+        .add_startup_system(setup_game_audios)
         .add_system_set(
             SystemSet::on_enter(AppState::MainMenu)
                 .with_system(setup_main_menu)

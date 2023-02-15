@@ -2,7 +2,7 @@ use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use rand::prelude::*;
 
 use crate::{
-  common::{AppState, GameState, HEIGHT, WIDTH},
+  common::{AppState, GameState, HEIGHT, WIDTH, GameAudios},
   score::{Score, Record},
 };
 
@@ -166,6 +166,8 @@ pub fn move_snake(
 	mut game_state: ResMut<State<GameState>>,
     mut score: ResMut<Score>,
     mut record: ResMut<Record>,
+    audio: Res<Audio>,
+    game_audios: Res<GameAudios>,
 ) {
 for (parent, children, mut snake) in &mut parents_query {
 	if snake.move_timer.tick(time.delta()).just_finished() {
@@ -193,6 +195,7 @@ for (parent, children, mut snake) in &mut parents_query {
 
 				app_state.set(AppState::GameOver).unwrap();
 				game_state.set(GameState::Quitted).unwrap();
+                audio.play(game_audios.die.clone());
 
 				return;
 			}
@@ -223,6 +226,7 @@ for (parent, children, mut snake) in &mut parents_query {
 				)).id();
 				commands.entity(parent).insert_children(0, &vec![new_child]);
 				commands.spawn(FoodTimer(Timer::from_seconds(1.0, TimerMode::Once)));
+                audio.play(game_audios.eat.clone());
 
                 score.0 += 1;
 			} else {
@@ -250,16 +254,30 @@ for (parent, children, mut snake) in &mut parents_query {
 pub fn contral_snake(
 	keyboard_input: ResMut<Input<KeyCode>>,
 	mut snake_query: Query<&mut Snake, With<Sprite>>,
+    audio: Res<Audio>,
+    game_audios: Res<GameAudios>,
 ) {
 	for mut snake in &mut snake_query {
-		if keyboard_input.pressed(KeyCode::Up) && snake.move_direction != Direction::Down {
+		if keyboard_input.pressed(KeyCode::Up)
+            && snake.move_direction != Direction::Down
+            && snake.move_direction != Direction::Up {
 			snake.move_direction = Direction::Up;
-		} else if keyboard_input.pressed(KeyCode::Down) && snake.move_direction != Direction::Up {
+            audio.play(game_audios.up.clone());
+		} else if keyboard_input.pressed(KeyCode::Down)
+            && snake.move_direction != Direction::Up
+            && snake.move_direction != Direction::Down {
 			snake.move_direction = Direction::Down;
-		} else if keyboard_input.pressed(KeyCode::Left) && snake.move_direction != Direction::Right {
+            audio.play(game_audios.down.clone());
+		} else if keyboard_input.pressed(KeyCode::Left) 
+            && snake.move_direction != Direction::Right
+            && snake.move_direction != Direction::Left {
 			snake.move_direction = Direction::Left;
-		} else if keyboard_input.pressed(KeyCode::Right) && snake.move_direction != Direction::Left {
+            audio.play(game_audios.left.clone());
+		} else if keyboard_input.pressed(KeyCode::Right)
+            && snake.move_direction != Direction::Left
+            && snake.move_direction != Direction::Right {
 			snake.move_direction = Direction::Right;
+            audio.play(game_audios.right.clone());
 		}
 	}
 }
