@@ -119,11 +119,13 @@ pub fn generate_food(
   mut query: Query<&mut FoodTimer>,
   mut meshes: ResMut<Assets<Mesh>>,
   mut materials: ResMut<Assets<ColorMaterial>>,
+  point_query: Query<&mut Point, With<Sprite>>,
   time: Res<Time>
 ) {
 	for mut timer in &mut query {
 		if timer.0.tick(time.delta()).just_finished() {
-			let square = Food(Point::random());
+            let square = new_food(&point_query);
+
             commonds.spawn((
                 MaterialMesh2dBundle {
                     mesh: meshes.add(shape::Circle::new(SQUARE_SIZE / 3.0).into()).into(),
@@ -135,6 +137,21 @@ pub fn generate_food(
             ));
 		}
 	}
+}
+
+// 生成一个不和蛇身重叠的food
+fn new_food(query: &Query<&mut Point, With<Sprite>>) -> Food {
+    let square = Food(Point::random());
+    let mut is_in_snake_body = false;
+    query.for_each(|point| {
+        if point.x == square.0.x && point.y == square.0.y {
+            is_in_snake_body = true;
+        }
+    });
+    if is_in_snake_body {
+        return new_food(query);
+    }
+    return square;
 }
 
 
