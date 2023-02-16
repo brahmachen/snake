@@ -10,7 +10,6 @@ pub enum MenuButtonAction {
     StartGame,
     RestartGame,
     BackToMainMenu,
-    ResumeGame,
     Quit,
 }
 
@@ -159,15 +158,10 @@ pub fn click_button(
                       game_state.set(GameState::Quitted).unwrap();
                   }
               }
-              MenuButtonAction::ResumeGame => {
-                  info!("ResumeGame button clicked");
-                  game_state.set(GameState::Playing).unwrap();
-              }
               MenuButtonAction::Quit => {
                   info!("Quit button clicked");
                   exit.send_default();
               }
-              _ => {}
           },
           _ => {}
       }

@@ -98,7 +98,3 @@ pub fn update_recordboard(lines: Res<Record>, mut query: Query<&mut Text, With<R
 pub fn clear_score(mut score: ResMut<Score>) {
     score.0 = 0;
 }
-
-pub fn clear_record(mut lines: ResMut<Record>) {
-    lines.0 = 0;
-}
